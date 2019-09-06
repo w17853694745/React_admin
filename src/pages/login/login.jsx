@@ -1,16 +1,59 @@
 import React, { Component } from 'react'
-
-import logo from "./images/logo.png"
+import {Redirect} from "react-router-dom"
 import "./login.less"
 import { Form, Icon, Input, Button ,message} from "antd";
 
+import {reqLogin} from "../../api/index"
+import storageUtils from "../../utils/storageUtils.js"
+import logo from "../../assets/images/logo.png";
+import memoryUtils from '../../utils/memoryUtils';
+const {Item} = Form
 
-export default class Login extends Component {
- handleSubmit = e => {
+class Login extends Component {
+  handleSubmit = e => {
     e.preventDefault();
-    message.success("登陆失败,请稍后再试")
+    this.props.form.validateFields(async (err, values) => {
+      const { username, password } = values;
+      if (!err) {
+        const result = await reqLogin(username, password);
+        if (result.status === 0) {
+          const user = result.data;
+          storageUtils.saveUser(user);
+          memoryUtils.user = user;
+          //信息正确
+          //debugger
+          this.props.history.replace("/");
+        } else {
+          //信息错误
+          message.error("用户名或密码错误", result.msg);
+        }
+      }
+    });
   };
+  validator = (rule, value, callback) => {
+    if (!value) {
+      callback("请输入密码");
+    } else if (value.length < 4) {
+      callback("密码不能小于4位");
+    } else if (value.length > 12) {
+      callback("密码不能大于12位");
+    } else {
+      callback();
+    }
+  };
+
   render() {
+    const user = memoryUtils.user;
+
+    //如果登陆
+    if (user._id) {
+      //debugger;
+      // 自动跳转到admin
+      return <Redirect to="/"></Redirect>;
+    }
+
+    const form = this.props.form;
+    const getFieldDecorator = form.getFieldDecorator;
     return (
       <div className="login">
         <div className="login-header">
@@ -20,31 +63,60 @@ export default class Login extends Component {
         <div className="login-content">
           <h1>用户登陆</h1>
           <Form onSubmit={this.handleSubmit} className="login-form">
+            <Item>
+              {/* 
+                1). 必须输入
+                2). 必须大于等于4位
+                3). 必须小于等于12位
+                4). 必须是英文、数字或下划线组成
+                */
+              getFieldDecorator("username", {
+                initialValue: "", // 指定输入框的初始值
+                // 声明式验证: 使用内置的验证规则进行验证
+                rules: [
+                  {
+                    required: true,
+                    whitespace: true,
+                    message: "必须输入用户名!"
+                  },
+                  { min: 4, message: "用户名不能小于4位!" },
+                  { max: 12, message: "用户名不能大于12位!" },
+                  {
+                    pattern: /^[a-zA-Z0-9_]+$/,
+                    message: "用户名只能包含英文、数字或下划线!"
+                  }
+                ]
+              })(
+                <Input
+                  prefix={
+                    <Icon type="user" style={{ color: "rgba(0,0,0,.25)" }} />
+                  }
+                  placeholder="用户名"
+                />
+              )}
+            </Item>
             <Form.Item>
-              <Input
-                prefix={
-                  <Icon type="user" style={{ color: "rgba(0,0,0,.25)" }} />
-                }
-                placeholder="用户名"
-              />
-            </Form.Item>
-            <Form.Item>
-              <Input
-                prefix={
-                  <Icon type="lock" style={{ color: "rgba(0,0,0,.25)" }} />
-                }
-                type="password"
-                placeholder="密码"
-              />
+              {getFieldDecorator("password", {
+                initialValue: "", // 指定输入框的初始值
+                rules: [{ validator: this.validatePwd }]
+              })(
+                <Input
+                  prefix={
+                    <Icon type="lock" style={{ color: "rgba(0,0,0,.25)" }} />
+                  }
+                  type="password"
+                  placeholder="密码"
+                />
+              )}
             </Form.Item>
             <Form.Item>
               <Button
                 type="primary"
                 htmlType="submit"
                 className="login-form-button"
-                style={{width:"100%"}}
+                style={{ width: "100%" }}
               >
-                登陆系统
+                登 陆
               </Button>
             </Form.Item>
           </Form>
@@ -52,4 +124,8 @@ export default class Login extends Component {
       </div>
     );
   }
+
+  
 }
+const wrappLogin =  Form.create()(Login)
+export default wrappLogin
