@@ -2,6 +2,7 @@ import React, { Component } from 'react'
 import {withRouter} from "react-router-dom"
 import dayjs from "dayjs"
 import {Modal} from "antd"
+import {connect} from "react-redux"
 
 import menuList from "../../config/menuConfig"
 import "./header.less"
@@ -9,6 +10,7 @@ import memoryUtils from "../../utils/memoryUtils"
 import { getWeather } from "../../api//index.js";
 import storageUtils from "../../utils/storageUtils";
 import LinkButton from "../link-button/index";
+import {logout} from "../../redux/actions"
 
 class Header extends Component {
   state = {
@@ -24,7 +26,7 @@ class Header extends Component {
       if (item.key === path) {
         title = item.title;
       } else if (item.children) {
-        const cItem = item.children.find(item => item.key === path);
+        const cItem = item.children.find(cItem =>path.indexOf(cItem.key));
         if (cItem) {
           title = cItem.title;
         }
@@ -62,10 +64,12 @@ class Header extends Component {
       title: "客官,不再逛逛了吗?",
       onOk: () => {
         // 删除保存的user
-        storageUtils.removeUser();
-        memoryUtils.user = {};
-        // 跳转到login
-        this.props.history.replace("/login");
+        
+        
+        this.props.logout()
+        // memoryUtils.user = {};
+        // // 跳转到login
+        // this.props.history.replace("/login");
       },
       onCancel() {
         console.log("Cancel");
@@ -74,8 +78,9 @@ class Header extends Component {
   };
 
   render() {
-    const user = memoryUtils.user;
-    const title = this.getTitle(menuList);
+    const user = this.props.user
+    //const title = this.getTitle(menuList);
+    const title = this.props.headerTitle
     const { dayPictureUrl, weather, date } = this.state;
     return (
       <div className="header">
@@ -98,4 +103,12 @@ class Header extends Component {
     );
   }
 }
-export default withRouter(Header)
+export default withRouter(
+  connect(
+    state => ({
+      headerTitle: state.headerTitle,
+      user: state.user
+    }),
+    { logout }
+  )(Header)
+);

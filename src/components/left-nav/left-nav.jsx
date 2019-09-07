@@ -2,7 +2,9 @@ import React, { Component } from 'react'
 import {Link} from "react-router-dom"
 import { Menu, Icon } from "antd";
 import { withRouter } from "react-router-dom"
+import {connect} from "react-redux"
 
+import { setHeaderTitle } from "../../redux/actions";
 import Logo from "../../assets/images/logo.png"
 import "./left-nav.less"
 import menuList from "../../config/menuConfig"
@@ -12,7 +14,7 @@ const {Item,SubMenu} = Menu
 
 class LeftNav extends Component {
   hasAuth = item => {
-    const user = memoryUtils.user;
+    const user = this.props.user
     const menus = user.role.menus;
     if (
       user.username === "admin" ||
@@ -26,22 +28,35 @@ class LeftNav extends Component {
     return false;
   };
 
+  click=(title)=>{
+
+    this.props.setHeaderTitle(title); 
+  }
+
   getmenu = menuList => {
-    const path = this.props.location.pathname;
+    let path = this.props.location.pathname;
+   
     return menuList.reduce((pre, item) => {
       if (this.hasAuth(item)) {
+        //设置标题
+        if (path.indexOf(item.key)===0) { 
+          this.click(item.title);
+        }
         if (!item.children) {
-          pre.push(
-            <Item key={item.key}>
-              <Link to={item.key}>
-                <Icon type={item.icon} />
-                <span>{item.title}</span>
-              </Link>
-            </Item>
-          );
+           pre.push(
+             <Item key={item.key}>
+               <Link
+                 to={item.key}
+                 onClick={()=>{this.click(item.title)}} 
+               >
+                 <Icon type={item.icon} />
+                 <span>{item.title}</span>
+               </Link>
+             </Item>
+           );
         } else {
           // 请求的路由路径对应children中某个
-          if (item.children.some(item => item.key === path)) {
+          if (item.children.some(item =>path.indexOf(item.key)===0)) {
             // 将item的key保存为openKey
             this.openKey = item.key;
           }
@@ -68,8 +83,12 @@ class LeftNav extends Component {
 
   render() {
     const menuList2 = this.getmenu(menuList);
-    const select = this.props.location.pathname;
+    let select = this.props.location.pathname;
     // const selected = this.getselected(menuList);
+    if (select.indexOf("/product/")===0) {
+      select ="/product"
+    }
+
     return (
       <div>
         <Link to="/home" className="left-nav">
@@ -88,4 +107,12 @@ class LeftNav extends Component {
     );
   }
 }
-export default withRouter(LeftNav)
+
+export default withRouter(
+  connect(
+    state => ({
+      user: state.user
+    }),
+    { setHeaderTitle }
+  )(LeftNav)
+);

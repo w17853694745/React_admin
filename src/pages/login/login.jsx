@@ -2,7 +2,9 @@ import React, { Component } from 'react'
 import {Redirect} from "react-router-dom"
 import "./login.less"
 import { Form, Icon, Input, Button ,message} from "antd";
+import {connect} from "react-redux"
 
+import { login } from "../../redux/actions.js";
 import {reqLogin} from "../../api/index"
 import storageUtils from "../../utils/storageUtils.js"
 import logo from "../../assets/images/logo.png";
@@ -15,18 +17,8 @@ class Login extends Component {
     this.props.form.validateFields(async (err, values) => {
       const { username, password } = values;
       if (!err) {
-        const result = await reqLogin(username, password);
-        if (result.status === 0) {
-          const user = result.data;
-          storageUtils.saveUser(user);
-          memoryUtils.user = user;
-          //信息正确
-          //debugger
-          this.props.history.replace("/");
-        } else {
-          //信息错误
-          message.error("用户名或密码错误", result.msg);
-        }
+        this.props.login(values)
+        
       }
     });
   };
@@ -43,13 +35,15 @@ class Login extends Component {
   };
 
   render() {
-    const user = memoryUtils.user;
+    const user = this.props.user
 
     //如果登陆
     if (user._id) {
       //debugger;
       // 自动跳转到admin
       return <Redirect to="/"></Redirect>;
+    }else if (user.msg) {
+      message.error("用户名或密码错误~")
     }
 
     const form = this.props.form;
@@ -61,6 +55,7 @@ class Login extends Component {
           <h1>后台管理系统-登陆</h1>
         </div>
         <div className="login-content">
+          
           <h1>用户登陆</h1>
           <Form onSubmit={this.handleSubmit} className="login-form">
             <Item>
@@ -128,4 +123,9 @@ class Login extends Component {
   
 }
 const wrappLogin =  Form.create()(Login)
-export default wrappLogin
+export default connect(
+  state => ({
+    user: state.user
+  }),
+  { login }
+)(wrappLogin);

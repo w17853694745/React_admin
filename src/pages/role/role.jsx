@@ -4,6 +4,7 @@ import {Card,Button,Table,Modal, message} from "antd"
 import LinkButton from "../../components/link-button"
 import { reqGetRoles, reqAddRoles, reqUpdataRole } from "../../api/index";
 import dayjs from "dayjs";
+import {connect} from "react-redux"
 
 import AddroleForm from "./addrole";
 import AuthForm from "./auth-form.jsx"
@@ -15,7 +16,7 @@ const Item = Table.Item
 
 
 
-export default class Role extends Component {
+class Role extends Component {
 
   authRef = React.createRef()
   state={
@@ -111,7 +112,7 @@ updateRole= async()=>{
   role.menus = this.authRef.current.getMenus();
  
   role.auth_time = Date.now()
-  role.auth_name = memoryUtils.user.username
+  role.auth_name = this.props.user.username
   const rusult = await reqUpdataRole(role)
   if (rusult.status===0) {
     //成功
@@ -163,3 +164,9 @@ updateRole= async()=>{
     );
   }
 }
+export default connect(
+  state=>({
+    user:state.user
+  }),
+  {}
+)(Role)

@@ -31,14 +31,27 @@ export default class AuthForm extends Component {
 
   getTreeNodes = menuList => {
     //console.log(menuList)
+    return menuList.reduce((pre,item)=>{
+      if (!item.pubulic) {
+        pre.push(
+          <TreeNode title={item.title} key={item.key}>
+            {item.children ? this.getTreeNodes(item.children) : null}
+          </TreeNode>
+        );
+      }
+
+      return pre
+    },[])
+
+
     return menuList.map(item => {
       return (
         <TreeNode title={item.title} key={item.key}>
           {item.children ? this.getTreeNodes(item.children) : null}
         </TreeNode>
-      );
-    });
-  };
+      )
+    })
+  }
   componentWillReceiveProps(nextprops) {
     const menus = nextprops.role.menus;
     this.setState({
